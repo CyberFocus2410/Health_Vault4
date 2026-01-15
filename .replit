@@ -9,6 +9,10 @@ channel = "stable-24_05"
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
 [env]
 PORT = "5000"
 
@@ -40,3 +44,16 @@ waitForPort = 5000
 
 [agent]
 mockupState = "MOCKUP"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-ada1de3c-52ff-415b-b641-0b5617e2c082"
+
+[userenv]
+
+[userenv.shared]
+FIREBASE_API_KEY = "AIzaSyA3DaqAJO_AhZ-k43bveUHmB_StprFUApU"
+FIREBASE_AUTH_DOMAIN = "healthvault-ai-db54d.firebaseapp.com"
+FIREBASE_PROJECT_ID = "healthvault-ai-db54d"
+FIREBASE_STORAGE_BUCKET = "healthvault-ai-db54d.firebasestorage.app"
+FIREBASE_APP_ID = "763389168953"
+GEMINI_API_KEY = "1:763389168953:web:b3046d345efe444395ace8"
