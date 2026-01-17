@@ -111,6 +111,32 @@ const INITIAL_REPORTS: MedicalReport[] = [
   }
 ];
 
+export interface Reminder {
+  id: string;
+  type: "appointment" | "medicine" | "vitals";
+  title: string;
+  time: string;
+  date?: string;
+}
+
+export interface EmergencyProfile {
+  bloodGroup: string;
+  allergies: string;
+  medications: string;
+  healthProblems: string;
+  emergencyContact: string;
+}
+
+export interface SharedRecord {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  recordId: string;
+  type: "report" | "vitals";
+  sharedAt: string;
+  doctorComment?: string;
+}
+
 // Context Interface
 interface AppContextType {
   currentUser: User | null;
@@ -125,6 +151,13 @@ interface AppContextType {
   updateAccessStatus: (requestId: string, status: "approved" | "denied") => void;
   generateAISummary: (reportId: string) => Promise<string>;
   generateHealthOverview: () => Promise<string>;
+  reminders: Reminder[];
+  addReminder: (reminder: Omit<Reminder, "id">) => void;
+  emergencyProfile: EmergencyProfile;
+  updateEmergencyProfile: (profile: EmergencyProfile) => void;
+  sharedRecords: SharedRecord[];
+  shareRecord: (record: Omit<SharedRecord, "id" | "sharedAt">) => void;
+  addDoctorComment: (shareId: string, comment: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -134,6 +167,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [vitals, setVitals] = useState<VitalRecord[]>(INITIAL_VITALS);
   const [reports, setReports] = useState<MedicalReport[]>(INITIAL_REPORTS);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [emergencyProfile, setEmergencyProfile] = useState<EmergencyProfile>({
+    bloodGroup: "O+",
+    allergies: "Penicillin",
+    medications: "Metformin 500mg",
+    healthProblems: "Type 2 Diabetes",
+    emergencyContact: "+91 98765 43210 (Sister)"
+  });
+  const [sharedRecords, setSharedRecords] = useState<SharedRecord[]>([]);
 
   const login = (role: UserRole) => {
     if (role === "patient") setCurrentUser(MOCK_PATIENT);
@@ -168,6 +210,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateAccessStatus = (requestId: string, status: "approved" | "denied") => {
     setAccessRequests(prev => prev.map(req => req.id === requestId ? { ...req, status } : req));
+  };
+
+  const addReminder = (reminder: Omit<Reminder, "id">) => {
+    setReminders([...reminders, { ...reminder, id: `rem${Date.now()}` }]);
+  };
+
+  const updateEmergencyProfile = (profile: EmergencyProfile) => {
+    setEmergencyProfile(profile);
+  };
+
+  const shareRecord = (record: Omit<SharedRecord, "id" | "sharedAt">) => {
+    setSharedRecords([...sharedRecords, { ...record, id: `share${Date.now()}`, sharedAt: new Date().toISOString() }]);
+  };
+
+  const addDoctorComment = (shareId: string, comment: string) => {
+    setSharedRecords(prev => prev.map(s => s.id === shareId ? { ...s, doctorComment: comment } : s));
   };
 
   const generateAISummary = async (reportId: string) => {
@@ -207,7 +265,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       requestAccess,
       updateAccessStatus,
       generateAISummary,
-      generateHealthOverview
+      generateHealthOverview,
+      reminders,
+      addReminder,
+      emergencyProfile,
+      updateEmergencyProfile,
+      sharedRecords,
+      shareRecord,
+      addDoctorComment
     }}>
       {children}
     </AppContext.Provider>

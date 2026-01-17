@@ -4,11 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Activity, FileText, Bell, Brain, ChevronRight, Lock, User as UserIcon } from "lucide-react";
+import { Activity, FileText, Bell, Brain, ChevronRight, Lock, User as UserIcon, Clock, ShieldAlert, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 const VitalsChart = ({ data }: { data: any[] }) => (
   <div className="h-[300px] w-full mt-4">
@@ -27,6 +31,173 @@ const VitalsChart = ({ data }: { data: any[] }) => (
     </ResponsiveContainer>
   </div>
 );
+
+const ReminderSection = () => {
+  const { reminders, addReminder } = useApp();
+  const [showAdd, setShowAdd] = useState(false);
+  const [newRem, setNewRem] = useState({ type: "medicine" as any, title: "", time: "", date: "" });
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Reminders</CardTitle>
+        <Dialog open={showAdd} onOpenChange={setShowAdd}>
+          <DialogTrigger asChild>
+            <Button size="sm">Add New</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Set Health Reminder</DialogTitle></DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Reminder Type</Label>
+                <Select onValueChange={(v) => setNewRem({...newRem, type: v as any})} defaultValue="medicine">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="medicine">Medicine</SelectItem>
+                    <SelectItem value="appointment">Doctor Appointment</SelectItem>
+                    <SelectItem value="vitals">Log Vitals</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input placeholder="e.g. Morning Insulin" value={newRem.title} onChange={(e) => setNewRem({...newRem, title: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Time</Label>
+                  <Input type="time" value={newRem.time} onChange={(e) => setNewRem({...newRem, time: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date (Optional)</Label>
+                  <Input type="date" value={newRem.date} onChange={(e) => setNewRem({...newRem, date: e.target.value})} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => { addReminder(newRem); setShowAdd(false); toast({title: "Reminder Set"}); }}>Save Reminder</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px]">
+          {reminders.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No active reminders</p>
+          ) : (
+            <div className="space-y-3">
+              {reminders.map(rem => (
+                <div key={rem.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${rem.type === 'medicine' ? 'bg-blue-100 text-blue-600' : rem.type === 'appointment' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
+                      {rem.type === 'medicine' ? <Activity className="h-4 w-4" /> : rem.type === 'appointment' ? <UserIcon className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{rem.title}</p>
+                      <p className="text-xs text-muted-foreground">{rem.time} {rem.date ? `on ${rem.date}` : 'Daily'}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="capitalize">{rem.type}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+};
+
+const EmergencyProfileSection = () => {
+  const { emergencyProfile, updateEmergencyProfile } = useApp();
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(emergencyProfile);
+
+  return (
+    <Card className="border-red-100 bg-red-50/30">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2 text-red-700"><ShieldAlert className="h-5 w-5" /> Emergency Profile</CardTitle>
+        <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>{isEditing ? "Cancel" : "Edit Profile"}</Button>
+      </CardHeader>
+      <CardContent>
+        {isEditing ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Blood Group</Label>
+                <Input value={profile.bloodGroup} onChange={e => setProfile({...profile, bloodGroup: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>Emergency Contact</Label>
+                <Input value={profile.emergencyContact} onChange={e => setProfile({...profile, emergencyContact: e.target.value})} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Allergies</Label>
+              <Input value={profile.allergies} onChange={e => setProfile({...profile, allergies: e.target.value})} />
+            </div>
+            <div className="space-y-2">
+              <Label>Chronic Conditions</Label>
+              <Input value={profile.healthProblems} onChange={e => setProfile({...profile, healthProblems: e.target.value})} />
+            </div>
+            <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => { updateEmergencyProfile(profile); setIsEditing(false); toast({title: "Profile Updated"}); }}>Save Emergency Profile</Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground font-medium">Blood Group</p>
+              <p className="font-bold text-lg text-red-900">{emergencyProfile.bloodGroup}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground font-medium">Emergency Contact</p>
+              <p className="font-bold">{emergencyProfile.emergencyContact}</p>
+            </div>
+            <div className="md:col-span-2 border-t pt-2 mt-2">
+              <p className="text-muted-foreground font-medium">Allergies & Medical History</p>
+              <p className="text-slate-700">{emergencyProfile.allergies} | {emergencyProfile.healthProblems}</p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ShareRecordDialog = ({ recordId, type }: { recordId: string, type: "report" | "vitals" }) => {
+  const { shareRecord } = useApp();
+  const [open, setOpen] = useState(false);
+  
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary"><Share2 className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Share with Doctor</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-muted-foreground">Select a doctor to securely share this {type} for review.</p>
+          <div className="space-y-2">
+             <Label>Select Doctor</Label>
+             <Select defaultValue="d1">
+               <SelectTrigger><SelectValue /></SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="d1">Dr. Anjali Gupta (MD, Cardiology)</SelectItem>
+                 <SelectItem value="d2">Dr. Vikram Singh (MD, General)</SelectItem>
+               </SelectContent>
+             </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button className="w-full" onClick={() => {
+            shareRecord({ patientId: "p1", doctorId: "d1", recordId, type });
+            setOpen(false);
+            toast({ title: "Shared Successfully", description: "The doctor will be notified to review this record." });
+          }}>Confirm Sharing</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const AIHealthSummary = () => {
   const { generateHealthOverview } = useApp();
@@ -122,6 +293,19 @@ export default function PatientDashboard() {
           </div>
         </div>
 
+        {/* Emergency Profile (New) */}
+        <EmergencyProfileSection />
+
+        {/* Reminders (New) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <AIHealthSummary />
+          </div>
+          <div>
+            <ReminderSection />
+          </div>
+        </div>
+
         {/* Pending Requests */}
         {accessRequests.filter(r => r.status === "pending").length > 0 && (
           <Card className="border-orange-200 bg-orange-50">
@@ -144,9 +328,6 @@ export default function PatientDashboard() {
           </Card>
         )}
 
-        {/* AI Summary */}
-        <AIHealthSummary />
-
         {/* Tabs for different views */}
         <Tabs defaultValue="overview">
           <TabsList className="grid w-full grid-cols-3">
@@ -157,9 +338,12 @@ export default function PatientDashboard() {
 
           <TabsContent value="overview" className="space-y-4 mt-4">
              <Card>
-               <CardHeader>
-                 <CardTitle>Vitals Trend</CardTitle>
-                 <CardDescription>Last 6 months of tracked health data</CardDescription>
+               <CardHeader className="flex flex-row items-center justify-between">
+                 <div>
+                   <CardTitle>Vitals Trend</CardTitle>
+                   <CardDescription>Last 6 months of tracked health data</CardDescription>
+                 </div>
+                 <ShareRecordDialog recordId="latest-vitals" type="vitals" />
                </CardHeader>
                <CardContent>
                  <VitalsChart data={vitals} />
@@ -201,7 +385,10 @@ export default function PatientDashboard() {
                     <div className="flex-1 pb-6">
                       <div className="flex justify-between items-start">
                         <h4 className="font-semibold text-slate-900">{report.title}</h4>
-                        <span className="text-xs text-muted-foreground">{report.date}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{report.date}</span>
+                          <ShareRecordDialog recordId={report.id} type="report" />
+                        </div>
                       </div>
                       <p className="text-sm text-slate-600 mt-1">{report.summary}</p>
                       <Badge variant="secondary" className="mt-2 text-xs">{report.uploadedBy}</Badge>
@@ -215,7 +402,7 @@ export default function PatientDashboard() {
           <TabsContent value="reports" className="mt-4">
             <div className="grid gap-4">
               {reports.map(report => (
-                 <Card key={report.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                 <Card key={report.id} className="hover:shadow-md transition-shadow">
                    <CardContent className="p-4 flex justify-between items-center">
                      <div className="flex items-center gap-3">
                        <div className="h-10 w-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
@@ -226,7 +413,10 @@ export default function PatientDashboard() {
                          <p className="text-xs text-muted-foreground">{report.date} • {report.type.toUpperCase()}</p>
                        </div>
                      </div>
-                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                     <div className="flex items-center gap-2">
+                        <ShareRecordDialog recordId={report.id} type="report" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                     </div>
                    </CardContent>
                  </Card>
               ))}
